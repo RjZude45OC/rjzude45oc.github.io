@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabata Timer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: linear-gradient(135deg, #282a36 0%, #44475a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .sidebar {
+            background: #21222c;
+            width: 300px;
+            max-width: 300px;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 2rem;
+            border-right: 2px solid #44475a;
+            transition: transform 0.3s ease;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+
+        .sidebar h2 {
+            color: #bd93f9;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .preset-form {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #44475a;
+        }
+
+        .preset-input {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        .preset-input input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #6272a4;
+            border-radius: 5px;
+            background: #282a36;
+            color: #f8f8f2;
+            font-size: 1rem;
+        }
+
+        .preset-input input:focus {
+            outline: none;
+            border-color: #bd93f9;
+            box-shadow: 0 0 0 2px rgba(189, 147, 249, 0.2);
+        }
+
+        .save-preset-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: #bd93f9;
+            color: #282a36;
+            border: 2px solid #bd93f9;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .save-preset-btn:hover {
+            background: #d6acff;
+            border-color: #d6acff;
+            transform: translateY(-1px);
+        }
+
+        .presets-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .preset-item {
+            background: #282a36;
+            border: 1px solid #44475a;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preset-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: #bd93f9;
+        }
+
+        .preset-name {
+            font-weight: bold;
+            color: #f8f8f2;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .preset-details {
+            font-size: 0.8rem;
+            color: #6272a4;
+        }
+
+        .preset-actions {
+            display: flex;
+            margin-top: 1rem;
+            gap: 0.5rem;
+        }
+
+        .preset-actions button {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            background: #383a59;
+            color: #f8f8f2;
+            border: 1px solid #44475a;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preset-actions button:hover {
+            background: #50556c;
+        }
+
+        .preset-actions button.delete {
+            background: #ff5555;
+            border-color: #ff5555;
+        }
+
+        .preset-actions button.delete:hover {
+            background: #ff6b6b;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 0 1rem;
+            margin-left: 300px;
+            transition: margin-left 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: calc(100% - 300px);
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .toggle-sidebar {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 101;
+            padding: 0.5rem;
+            background: #bd93f9;
+            color: #282a36;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-sidebar:hover {
+            background: #d6acff;
+            transform: scale(1.05);
+        }
+
+        .container {
+            background: #21222c;
+            border: 2px solid #44475a;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #f8f8f2;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .setting-group {
+            background: #1a1b26;
+            padding: 1rem;
+            border-radius: 10px;
+            border: 2px solid #44475a;
+        }
+
+        .setting-group label {
+            display: block;
+            font-weight: bold;
+            color: #bd93f9;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .setting-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #6272a4;
+            border-radius: 5px;
+            font-size: 1rem;
+            text-align: center;
+            background: #282a36;
+            color: #f8f8f2;
+        }
+
+        .setting-group input:focus {
+            outline: none;
+            border-color: #bd93f9;
+            box-shadow: 0 0 0 2px rgba(189, 147, 249, 0.2);
+        }
+
+        .timer-display {
+            background: #1a1b26;
+            color: #f8f8f2;
+            border: 2px solid #44475a;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .time {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            font-family: 'Orbitron', monospace;
+            color: #50fa7b;
+            text-shadow: 0 0 10px rgba(80, 250, 123, 0.3);
+        }
+
+        .phase {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #ff79c6;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+        }
+
+        .progress-info {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            color: #8be9fd;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Rajdhani', sans-serif;
+            border: 2px solid;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .start-btn {
+            background: #50fa7b;
+            color: #282a36;
+            border-color: #50fa7b;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(80, 250, 123, 0.4);
+            background: #5af78e;
+        }
+
+        .pause-btn {
+            background: #ffb86c;
+            color: #282a36;
+            border-color: #ffb86c;
+        }
+
+        .pause-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 184, 108, 0.4);
+            background: #ffc478;
+        }
+
+        .reset-btn {
+            background: #ff5555;
+            color: #f8f8f2;
+            border-color: #ff5555;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 85, 85, 0.4);
+            background: #ff6b6b;
+        }
+
+        .sound-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .sound-toggle {
+            background: #6272a4;
+            color: #f8f8f2;
+            border: 2px solid #6272a4;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .sound-toggle.active {
+            background: #bd93f9;
+            border-color: #bd93f9;
+            color: #282a36;
+        }
+
+        .sound-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(98, 114, 164, 0.4);
+        }
+
+        .sound-toggle.active:hover {
+            box-shadow: 0 3px 10px rgba(189, 147, 249, 0.4);
+        }
+
+        .work-flash {
+            background: linear-gradient(45deg, #ff5555, #ff6b6b) !important;
+            animation: flash 0.5s ease-in-out;
+        }
+
+        .rest-flash {
+            background: linear-gradient(45deg, #8be9fd, #50fa7b) !important;
+            animation: flash 0.5s ease-in-out;
+        }
+
+        .prepare-flash {
+            background: linear-gradient(45deg, #ffb86c, #ff79c6) !important;
+            animation: flash 0.5s ease-in-out;
+        }
+
+        .set-complete-flash {
+            background: linear-gradient(45deg, #bd93f9, #ff79c6) !important;
+            animation: flash 1s ease-in-out;
+        }
+
+        .workout-complete-flash {
+            background: linear-gradient(45deg, #f1fa8c, #50fa7b) !important;
+            animation: celebration 2s ease-in-out;
+        }
+
+        @keyframes flash {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes celebration {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.05) rotate(1deg); }
+            50% { transform: scale(1.1) rotate(-1deg); }
+            75% { transform: scale(1.05) rotate(1deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.hidden {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .main-content.expanded {
+                margin-left: 300px;
+                width: calc(100% - 300px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .settings {
+                grid-template-columns: 1fr;
+            }
+            
+            .time {
+                font-size: 3rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .main-content.expanded {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #21222c;
+            border-radius: 10px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal h3 {
+            color: #bd93f9;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #6272a4;
+            border-radius: 5px;
+            background: #282a36;
+            color: #f8f8f2;
+            font-size: 1rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 0.75rem;
+        }
+
+        .confirm-btn {
+            background: #bd93f9;
+            color: #282a36;
+            border-color: #bd93f9;
+        }
+
+        .cancel-btn {
+            background: #44475a;
+            color: #f8f8f2;
+            border-color: #44475a;
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-sidebar" id="toggleSidebar">☰</button>
+    
+    <div class="app-container">
+        <div class="sidebar" id="sidebar">
+            <h2>🔖 Presets</h2>
+            
+            <div class="preset-form">
+                <div class="preset-input">
+                    <input type="text" id="presetName" placeholder="Enter preset name...">
+                </div>
+                <button class="save-preset-btn" id="savePresetBtn">Save Current Settings</button>
+            </div>
+            
+            <div class="presets-list" id="presetsList">
+            </div>
+        </div>
+        
+        <div class="main-content" id="mainContent">
+            <div class="container">
+                <h1>🔥 Tabata Timer</h1>
+                
+                <div class="settings">
+                    <div class="setting-group">
+                        <label for="rounds">Rounds per Set</label>
+                        <input type="number" id="rounds" value="8" min="1" max="20">
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="workTime">Work Time (sec)</label>
+                        <input type="number" id="workTime" value="20" min="1" max="180">
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="restTime">Rest Time (sec)</label>
+                        <input type="number" id="restTime" value="10" min="1" max="180">
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="sets">Number of Sets</label>
+                        <input type="number" id="sets" value="1" min="1" max="10">
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="setRest">Set Rest (sec)</label>
+                        <input type="number" id="setRest" value="60" min="1" max="300">
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="prepare">Prepare Time (sec)</label>
+                        <input type="number" id="prepare" value="10" min="0" max="60">
+                    </div>
+                </div>
+
+                <div class="timer-display">
+                    <div class="time" id="timeDisplay">00:00</div>
+                    <div class="phase" id="phaseDisplay">Ready to Start</div>
+                    <div class="progress-info" id="progressDisplay">Set 1 of 1 | Round 1 of 8</div>
+                </div>
+
+                <div class="controls">
+                    <button class="start-btn" id="startBtn">Start</button>
+                    <button class="pause-btn hidden" id="pauseBtn">Pause</button>
+                    <button class="reset-btn" id="resetBtn">Reset</button>
+                </div>
+
+                <div class="sound-controls">
+                    <button class="sound-toggle active" id="soundToggle">🔊 Sound ON</button>
+                    <button class="sound-toggle active" id="flashToggle">⚡ Flash ON</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="renameModal">
+        <div class="modal-content">
+            <h3>Rename Preset</h3>
+            <input type="text" id="newPresetName" placeholder="Enter new name...">
+            <div class="modal-buttons">
+                <button class="confirm-btn" id="confirmRenameBtn">Rename</button>
+                <button class="cancel-btn" id="cancelRenameBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TabataTimer {
+            constructor() {
+                this.rounds = 8;
+                this.workTime = 20;
+                this.restTime = 10;
+                this.sets = 1;
+                this.setRestTime = 60;
+                this.prepareTime = 10;
+                
+                this.currentSet = 1;
+                this.currentRound = 1;
+                this.currentTime = 0;
+                this.isRunning = false;
+                this.isPaused = false;
+                this.phase = 'ready';
+                
+                this.soundEnabled = true;
+                this.flashEnabled = true;
+                this.interval = null;
+                
+                this.celebrationTimeouts = [];
+                
+                this.halfwayAlerted = false;
+                this.countdownStarted = false;
+                
+                this.audioContext = null;
+                this.initAudio();
+                this.initPresets();
+                this.bindEvents();
+                this.updateDisplay();
+            }
+
+            initAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    this.sounds = {
+                        work: new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.wav'),
+                        rest: new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-04.wav'),
+                        setComplete: new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-03.wav'),
+                        complete: new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-02.wav')
+                    };
+                    
+                    Object.values(this.sounds).forEach(sound => {
+                        sound.volume = 0.5;
+                    });
+                } catch (e) {
+                    console.log('Web Audio API not supported');
+                }
+            }
+
+            initPresets() {
+                this.presets = JSON.parse(localStorage.getItem('tabataPresets')) || [];
+                this.selectedPresetId = null;
+                this.renderPresets();
+            }
+
+            renderPresets() {
+                const presetsListEl = document.getElementById('presetsList');
+                presetsListEl.innerHTML = '';
+                
+                if (this.presets.length === 0) {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'preset-empty';
+                    emptyMessage.textContent = 'No presets saved yet. Configure your timer and save a preset.';
+                    emptyMessage.style.color = '#6272a4';
+                    emptyMessage.style.textAlign = 'center';
+                    emptyMessage.style.padding = '1rem';
+                    presetsListEl.appendChild(emptyMessage);
+                    return;
+                }
+                
+                this.presets.forEach(preset => {
+                    const presetEl = document.createElement('div');
+                    presetEl.className = 'preset-item';
+                    if (preset.id === this.selectedPresetId) {
+                        presetEl.style.borderColor = '#50fa7b';
+                        presetEl.style.borderWidth = '2px';
+                    }
+                    
+                    const presetNameEl = document.createElement('div');
+                    presetNameEl.className = 'preset-name';
+                    presetNameEl.textContent = preset.name;
+                    
+                    const presetDetailsEl = document.createElement('div');
+                    presetDetailsEl.className = 'preset-details';
+                    presetDetailsEl.textContent = 
+                        `${preset.rounds} rounds | ${preset.workTime}s work / ${preset.restTime}s rest | ${preset.sets} sets`;
+                    
+                    const actionsEl = document.createElement('div');
+                    actionsEl.className = 'preset-actions';
+                    
+                    const loadBtn = document.createElement('button');
+                    loadBtn.textContent = 'Load';
+                    loadBtn.addEventListener('click', e => {
+                        e.stopPropagation();
+                        this.loadPreset(preset.id);
+                    });
+                    
+                    const renameBtn = document.createElement('button');
+                    renameBtn.textContent = 'Rename';
+                    renameBtn.addEventListener('click', e => {
+                        e.stopPropagation();
+                        this.showRenameModal(preset.id);
+                    });
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.className = 'delete';
+                    deleteBtn.addEventListener('click', e => {
+                        e.stopPropagation();
+                        this.deletePreset(preset.id);
+                    });
+                    
+                    actionsEl.appendChild(loadBtn);
+                    actionsEl.appendChild(renameBtn);
+                    actionsEl.appendChild(deleteBtn);
+                    
+                    presetEl.appendChild(presetNameEl);
+                    presetEl.appendChild(presetDetailsEl);
+                    presetEl.appendChild(actionsEl);
+                    
+                    presetEl.addEventListener('click', () => {
+                        this.loadPreset(preset.id);
+                    });
+                    
+                    presetsListEl.appendChild(presetEl);
+                });
+            }
+
+            savePreset() {
+                const nameInput = document.getElementById('presetName');
+                let name = nameInput.value.trim();
+                
+                if (!name) {
+                    name = `Preset ${this.presets.length + 1}`;
+                }
+                
+                const preset = {
+                    id: Date.now().toString(),
+                    name: name,
+                    rounds: this.rounds,
+                    workTime: this.workTime,
+                    restTime: this.restTime,
+                    sets: this.sets,
+                    setRestTime: this.setRestTime,
+                    prepareTime: this.prepareTime
+                };
+                
+                this.presets.push(preset);
+                localStorage.setItem('tabataPresets', JSON.stringify(this.presets));
+                
+                nameInput.value = '';
+                this.renderPresets();
+                
+                this.showToast(`Preset "${name}" saved successfully!`);
+            }
+
+            loadPreset(id) {
+                const preset = this.presets.find(p => p.id === id);
+                if (!preset) return;
+                
+                this.rounds = preset.rounds;
+                this.workTime = preset.workTime;
+                this.restTime = preset.restTime;
+                this.sets = preset.sets;
+                this.setRestTime = preset.setRestTime;
+                this.prepareTime = preset.prepareTime;
+                
+                document.getElementById('rounds').value = this.rounds;
+                document.getElementById('workTime').value = this.workTime;
+                document.getElementById('restTime').value = this.restTime;
+                document.getElementById('sets').value = this.sets;
+                document.getElementById('setRest').value = this.setRestTime;
+                document.getElementById('prepare').value = this.prepareTime;
+                
+                this.selectedPresetId = id;
+                this.renderPresets();
+                this.reset();
+                
+                this.showToast(`Preset "${preset.name}" loaded!`);
+                
+                if (window.innerWidth < 992) {
+                    document.getElementById('sidebar').classList.add('hidden');
+                    document.getElementById('mainContent').classList.remove('expanded');
+                }
+            }
+
+            deletePreset(id) {
+                const presetIndex = this.presets.findIndex(p => p.id === id);
+                if (presetIndex === -1) return;
+                
+                const presetName = this.presets[presetIndex].name;
+                this.presets.splice(presetIndex, 1);
+                localStorage.setItem('tabataPresets', JSON.stringify(this.presets));
+                
+                if (this.selectedPresetId === id) {
+                    this.selectedPresetId = null;
+                }
+                
+                this.renderPresets();
+                this.showToast(`Preset "${presetName}" deleted.`);
+            }
+
+            showRenameModal(id) {
+                const preset = this.presets.find(p => p.id === id);
+                if (!preset) return;
+                
+                const modal = document.getElementById('renameModal');
+                const nameInput = document.getElementById('newPresetName');
+                const confirmBtn = document.getElementById('confirmRenameBtn');
+                
+                nameInput.value = preset.name;
+                modal.style.display = 'flex';
+                nameInput.focus();
+                
+                const renameHandler = () => {
+                    const newName = nameInput.value.trim();
+                    if (newName) {
+                        preset.name = newName;
+                        localStorage.setItem('tabataPresets', JSON.stringify(this.presets));
+                        this.renderPresets();
+                        this.showToast(`Preset renamed to "${newName}".`);
+                    }
+                    modal.style.display = 'none';
+                    confirmBtn.removeEventListener('click', renameHandler);
+                };
+                
+                confirmBtn.addEventListener('click', renameHandler);
+                
+                document.getElementById('cancelRenameBtn').addEventListener('click', () => {
+                    modal.style.display = 'none';
+                    confirmBtn.removeEventListener('click', renameHandler);
+                });
+                
+                const keyHandler = (e) => {
+                    if (e.key === 'Enter') {
+                        renameHandler();
+                        document.removeEventListener('keydown', keyHandler);
+                    } else if (e.key === 'Escape') {
+                        modal.style.display = 'none';
+                        document.removeEventListener('keydown', keyHandler);
+                    }
+                };
+                
+                document.addEventListener('keydown', keyHandler);
+            }
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.right = '20px';
+                toast.style.backgroundColor = '#50fa7b';
+                toast.style.color = '#282a36';
+                toast.style.padding = '12px 20px';
+                toast.style.borderRadius = '5px';
+                toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                toast.style.zIndex = '1000';
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.textContent = message;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                }, 10);
+                
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(20px)';
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+
+            playSound(frequency, duration, type = 'beep', volume = 1.0) {
+                if (!this.soundEnabled) return;
+                
+                if (this.sounds && this.sounds[type]) {
+                    try {
+                        this.sounds[type].pause();
+                        this.sounds[type].currentTime = 0;
+                        this.sounds[type].volume = 1.0;
+                        this.sounds[type].play();
+                        return;
+                    } catch (e) {
+                        console.log('Error playing custom sound:', e);
+                    }
+                }
+                
+                if (!this.audioContext) return;
+                
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(volume, this.audioContext.currentTime + 0.01);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                } catch (e) {
+                    console.log('Error playing sound:', e);
+                }
+            }
+
+            flashScreen(className) {
+                if (!this.flashEnabled) return;
+                
+                document.body.classList.add(className);
+                setTimeout(() => {
+                    document.body.classList.remove(className);
+                }, 500);
+            }
+
+            bindEvents() {
+                document.getElementById('startBtn').addEventListener('click', () => this.start());
+                document.getElementById('pauseBtn').addEventListener('click', () => this.pause());
+                document.getElementById('resetBtn').addEventListener('click', () => this.reset());
+                
+                document.getElementById('soundToggle').addEventListener('click', () => this.toggleSound());
+                document.getElementById('flashToggle').addEventListener('click', () => this.toggleFlash());
+                
+                ['rounds', 'workTime', 'restTime', 'sets', 'setRest', 'prepare'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => this.updateSettings());
+                });
+                
+                document.getElementById('savePresetBtn').addEventListener('click', () => this.savePreset());
+                
+                document.getElementById('toggleSidebar').addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.toggle('hidden');
+                    document.getElementById('mainContent').classList.toggle('expanded');
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (window.innerWidth < 992) {
+                        const sidebar = document.getElementById('sidebar');
+                        const sidebarBtn = document.getElementById('toggleSidebar');
+                        
+                        if (!sidebar.contains(e.target) && e.target !== sidebarBtn && !sidebar.classList.contains('hidden')) {
+                            sidebar.classList.add('hidden');
+                            document.getElementById('mainContent').classList.remove('expanded');
+                        }
+                    }
+                });
+            }
+
+            updateSettings() {
+                if (this.isRunning) return;
+                
+                this.rounds = parseInt(document.getElementById('rounds').value);
+                this.workTime = parseInt(document.getElementById('workTime').value);
+                this.restTime = parseInt(document.getElementById('restTime').value);
+                this.sets = parseInt(document.getElementById('sets').value);
+                this.setRestTime = parseInt(document.getElementById('setRest').value);
+                this.prepareTime = parseInt(document.getElementById('prepare').value);
+                
+                const currentPreset = this.presets.find(p => p.id === this.selectedPresetId);
+                if (currentPreset) {
+                    if (
+                        this.rounds !== currentPreset.rounds ||
+                        this.workTime !== currentPreset.workTime ||
+                        this.restTime !== currentPreset.restTime ||
+                        this.sets !== currentPreset.sets ||
+                        this.setRestTime !== currentPreset.setRestTime ||
+                        this.prepareTime !== currentPreset.prepareTime
+                    ) {
+                        this.selectedPresetId = null;
+                        this.renderPresets();
+                    }
+                }
+                
+                this.reset();
+            }
+
+            start() {
+                this.clearAllSoundTimeouts();
+                
+                if (this.isPaused) {
+                    this.isPaused = false;
+                    this.isRunning = true;
+                    this.startTimer();
+                } else {
+                    this.isRunning = true;
+                    if (this.prepareTime > 0) {
+                        this.phase = 'prepare';
+                        this.currentTime = this.prepareTime;
+                    } else {
+                        this.phase = 'work';
+                        this.currentTime = this.workTime;
+                    }
+                    this.startTimer();
+                }
+                
+                this.updateButtons();
+                this.updateDisplay();
+                
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+            }
+
+            pause() {
+                this.isRunning = false;
+                this.isPaused = true;
+                this.stopTimer();
+                this.updateButtons();
+            }
+
+            reset() {
+                this.clearAllSoundTimeouts();
+                
+                this.isRunning = false;
+                this.isPaused = false;
+                this.currentSet = 1;
+                this.currentRound = 1;
+                this.phase = 'ready';
+                this.currentTime = 0;
+                this.halfwayAlerted = false;
+                this.countdownStarted = false;
+                this.stopTimer();
+                this.updateButtons();
+                this.updateDisplay();
+            }
+
+            clearAllSoundTimeouts() {
+                this.celebrationTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+                this.celebrationTimeouts = [];
+                
+                if (this.sounds) {
+                    Object.values(this.sounds).forEach(sound => {
+                        sound.pause();
+                        sound.currentTime = 0;
+                    });
+                }
+            }
+
+            startTimer() {
+                this.interval = setInterval(() => {
+                    if ((this.phase === 'work' || this.phase === 'rest' || this.phase === 'prepare' || this.phase === 'setRest') && !this.halfwayAlerted) {
+                        let totalTime;
+                        if (this.phase === 'work') totalTime = this.workTime;
+                        else if (this.phase === 'rest') totalTime = this.restTime;
+                        else if (this.phase === 'prepare') totalTime = this.prepareTime;
+                        else if (this.phase === 'setRest') totalTime = this.setRestTime;
+                        
+                        const halfwayPoint = Math.ceil(totalTime / 2);
+                        
+                        if (this.currentTime === halfwayPoint && totalTime > 2) {
+                            this.playSound(1000, 0.2, 'halfway', 0.7);
+                            this.halfwayAlerted = true;
+                        }
+                    }
+                    
+                    if ((this.phase === 'work' || this.phase === 'rest' || this.phase === 'prepare' || this.phase === 'setRest') && this.currentTime <= 5 && this.currentTime > 0) {
+                        if (!this.countdownStarted) {
+                            this.countdownStarted = true;
+                        }
+                        this.playSound(1200, 0.15, 'countdown', 0.8);
+                    }
+                    
+                    this.currentTime--;
+                    
+                    if (this.currentTime <= 0) {
+                        this.handlePhaseComplete();
+                    }
+                    
+                    this.updateDisplay();
+                }, 1000);
+            }
+
+            stopTimer() {
+                if (this.interval) {
+                    clearInterval(this.interval);
+                    this.interval = null;
+                }
+            }
+
+            handlePhaseComplete() {
+                this.halfwayAlerted = false;
+                this.countdownStarted = false;
+                
+                switch (this.phase) {
+                    case 'prepare':
+                        this.playSound(800, 0.5, 'work', 0.9);
+                        this.flashScreen('prepare-flash');
+                        this.phase = 'work';
+                        this.currentTime = this.workTime;
+                        break;
+                        
+                    case 'work':
+                        this.playSound(600, 0.3, 'rest', 0.9);
+                        this.flashScreen('rest-flash');
+                        
+                        if (this.currentRound >= this.rounds) {
+                            if (this.currentSet >= this.sets) {
+                                this.phase = 'complete';
+                                this.playWorkoutCompleteSound();
+                                this.flashScreen('workout-complete-flash');
+                                this.isRunning = false;
+                                this.stopTimer();
+                                this.updateButtons();
+                                return;
+                            } else {
+                                this.playSound(400, 0.8, 'setComplete', 0.9);
+                                this.flashScreen('set-complete-flash');
+                                this.phase = 'setRest';
+                                this.currentTime = this.setRestTime;
+                                this.currentSet++;
+                                this.currentRound = 1;
+                            }
+                        } else {
+                            this.phase = 'rest';
+                            this.currentTime = this.restTime;
+                        }
+                        break;
+                        
+                    case 'rest':
+                        this.playSound(800, 0.5, 'work', 0.9);
+                        this.flashScreen('work-flash');
+                        this.phase = 'work';
+                        this.currentTime = this.workTime;
+                        this.currentRound++;
+                        break;
+                        
+                    case 'setRest':
+                        this.playSound(800, 0.5, 'work', 0.9);
+                        this.flashScreen('work-flash');
+                        this.phase = 'work';
+                        this.currentTime = this.workTime;
+                        break;
+                }
+            }
+
+            playWorkoutCompleteSound() {
+                if (!this.soundEnabled) return;
+                
+                this.clearAllSoundTimeouts();
+                
+                this.playSound(1000, 1, 'complete', 1.0);
+                
+                const timeout1 = setTimeout(() => {
+                    this.playSound(1200, 1, 'complete', 1.0);
+                }, 200);
+                
+                const timeout2 = setTimeout(() => {
+                    this.playSound(1400, 1, 'complete', 1.0);
+                }, 400);
+                
+                this.celebrationTimeouts.push(timeout1, timeout2);
+            }
+
+            updateDisplay() {
+                const timeDisplay = document.getElementById('timeDisplay');
+                const phaseDisplay = document.getElementById('phaseDisplay');
+                const progressDisplay = document.getElementById('progressDisplay');
+                
+                const minutes = Math.floor(this.currentTime / 60);
+                const seconds = this.currentTime % 60;
+                timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                const phaseTexts = {
+                    'ready': 'Ready to Start',
+                    'prepare': 'Get Ready!',
+                    'work': 'WORK!',
+                    'rest': 'Rest',
+                    'setRest': 'Set Break',
+                    'complete': 'Workout Complete!'
+                };
+                phaseDisplay.textContent = phaseTexts[this.phase];
+                
+                if (this.phase === 'complete') {
+                    progressDisplay.textContent = '🎉 Great job! 🎉';
+                } else {
+                    progressDisplay.textContent = `Set ${this.currentSet} of ${this.sets} | Round ${this.currentRound} of ${this.rounds}`;
+                }
+                
+                const timerDisplay = document.querySelector('.timer-display');
+                timerDisplay.className = 'timer-display';
+                if (this.phase === 'work') {
+                    timerDisplay.style.background = 'linear-gradient(45deg, #ff6b6b, #ff8e53)';
+                } else if (this.phase === 'rest') {
+                    timerDisplay.style.background = 'linear-gradient(45deg, #4ecdc4, #44a08d)';
+                } else if (this.phase === 'setRest') {
+                    timerDisplay.style.background = 'linear-gradient(45deg, #a8edea, #fed6e3)';
+                } else if (this.phase === 'complete') {
+                    timerDisplay.style.background = 'linear-gradient(45deg, #ffecd2, #fcb69f)';
+                } else {
+                    timerDisplay.style.background = '#1a1a1a';
+                }
+            }
+
+            updateButtons() {
+                const startBtn = document.getElementById('startBtn');
+                const pauseBtn = document.getElementById('pauseBtn');
+                
+                if (this.isRunning) {
+                    startBtn.classList.add('hidden');
+                    pauseBtn.classList.remove('hidden');
+                } else {
+                    startBtn.classList.remove('hidden');
+                    pauseBtn.classList.add('hidden');
+                    
+                    if (this.isPaused) {
+                        startBtn.textContent = 'Resume';
+                    } else {
+                        startBtn.textContent = 'Start';
+                    }
+                }
+            }
+
+            toggleSound() {
+                this.soundEnabled = !this.soundEnabled;
+                const btn = document.getElementById('soundToggle');
+                btn.textContent = this.soundEnabled ? '🔊 Sound ON' : '🔇 Sound OFF';
+                btn.classList.toggle('active', this.soundEnabled);
+            }
+
+            toggleFlash() {
+                this.flashEnabled = !this.flashEnabled;
+                const btn = document.getElementById('flashToggle');
+                btn.textContent = this.flashEnabled ? '⚡ Flash ON' : '⚡ Flash OFF';
+                btn.classList.toggle('active', this.flashEnabled);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new TabataTimer();
+        });
+    </script>
+</body>
+</html>
