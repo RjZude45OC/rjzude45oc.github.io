@@ -32,5 +32,16 @@
     <h1>Hello, world!</h1>
     <p>Welcome to my GitHub Pages site.</p>
   </div>
+   <script>
+        window.addEventListener('hashchange', handleRoute);
+        window.addEventListener('load', handleRoute);
+
+        function handleRoute() {
+            const hash = window.location.hash;
+            if (hash === '#/timer') {
+                window.location.href = '/timer/timer.html';
+            }
+        }
+    </script>
 </body>
 </html>
