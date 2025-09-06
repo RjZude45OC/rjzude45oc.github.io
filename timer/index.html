@@ -538,6 +538,19 @@
             color: #f8f8f2;
             border-color: #44475a;
         }
+        .side-indicator {
+            background: #282a36;
+            color: #50fa7b;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        .switch-flash {
+            background: linear-gradient(45deg, #bd93f9, #ff79c6) !important;
+            animation: flash 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -592,6 +605,15 @@
                         <label for="prepare">Prepare Time (sec)</label>
                         <input type="number" id="prepare" value="10" min="0" max="60">
                     </div>
+                    <div class="setting-group">
+                        <label for="switchTime">Switch Time (sec)</label>
+                        <input type="number" id="switchTime" value="5" min="1" max="30">
+                    </div>
+                    <div class="setting-group">
+                        <label for="alternateSides">Alternate Sides</label>
+                        <input type="checkbox" id="alternateSides">
+                    </div>
+                        <div id="sideIndicator" class="side-indicator">Current Side: Left</div>
                 </div>
 
                 <div class="timer-display">
@@ -650,12 +672,17 @@
                 
                 this.halfwayAlerted = false;
                 this.countdownStarted = false;
+
+                this.switchTime = 5;
+                this.alternateSides = false;
+                this.currentSide = 'left';
                 
                 this.audioContext = null;
                 this.initAudio();
                 this.initPresets();
                 this.bindEvents();
                 this.updateDisplay();
+                this.bindSideControls();
             }
 
             initAudio() {
@@ -755,7 +782,29 @@
                     presetsListEl.appendChild(presetEl);
                 });
             }
+            bindSideControls() {
+                const switchTimeInput = document.getElementById('switchTime');
+                const alternateSidesInput = document.getElementById('alternateSides');
+                
+                switchTimeInput.addEventListener('change', () => {
+                    this.switchTime = parseInt(switchTimeInput.value);
+                });
+                
+                alternateSidesInput.addEventListener('change', () => {
+                    this.alternateSides = alternateSidesInput.checked;
+                });
+            }
 
+            switchSides() {
+                if (!this.alternateSides) return;
+                
+                this.currentSide = this.currentSide === 'left' ? 'right' : 'left';
+                const sideIndicator = document.getElementById('sideIndicator');
+                sideIndicator.textContent = `Current Side: ${this.currentSide.charAt(0).toUpperCase() + this.currentSide.slice(1)}`;
+                
+                this.flashScreen('switch-flash');
+                this.playSound(800, 0.3, 'switch');
+            }
             savePreset() {
                 const nameInput = document.getElementById('presetName');
                 let name = nameInput.value.trim();
