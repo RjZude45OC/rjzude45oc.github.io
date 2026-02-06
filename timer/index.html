@@ -677,10 +677,10 @@
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     
                     this.sounds = {
-                        work: new Audio('/sounds/work.mp3'),
-                        rest: new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-04.wav'),
-                        setComplete: new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-03.wav'),
-                        complete: new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-02.wav')
+                       work: new Audio('./sound/1.mp3'),
+                       rest: new Audio('./sound/2.wav'),
+                       setComplete: new Audio('./sound/3.wav'),
+                       complete: new Audio('./sound/4.wav')
                     };
                     
                     Object.values(this.sounds).forEach(sound => {
